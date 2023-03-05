@@ -11,3 +11,4 @@ The goals of this fork are:
 - port Jan Ostman ATtiny85 sample code
 - explore biquads
 - euclidean rhythm generator
+- bytebeat module ([example](https://pastebin.com/mfnKNWVD))
