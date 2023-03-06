@@ -73,6 +73,17 @@ void Fault(byte n) {
   }
 }
 
+word linlin(word f, word slo, word shi, word dlo, word dhi) {
+    if (f<=slo) {
+        return dlo;
+    } else if (f >= shi) {
+        return dhi;
+    } else {
+        return (f-slo)*(dhi-dlo)/(shi-slo)+dlo;
+    }
+}
+
+
 struct MoctalTicker {
   
   // You must zero these yourself, if not global.
@@ -312,7 +323,7 @@ void setup() { jerboa_internal::setup(); }
 void loop() { jerboa_internal::loop(); }
 
 // public wrappers
-
+inline word linlin(word f, word slo, word shi, word dlo, word dhi) { return jerboa_internal::linlin(f,slo,shi,dlo,dhi); }
 inline byte InA()   { return jerboa_internal::AnalogA; }
 inline byte InB()   { return jerboa_internal::AnalogB; }
 inline byte InR()   { return jerboa_internal::AnalogK; }  // R was old name for K.
