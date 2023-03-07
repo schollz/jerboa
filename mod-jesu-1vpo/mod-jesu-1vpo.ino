@@ -6,8 +6,8 @@
 // Out F: tone control voltage.
 // Out L: Led can be used as an envelope gate.
 
-#include "/tmp/jerboa/jerboa.h"
-#include "/tmp/jerboa/generated-jesu-table.h"
+#include "/home/zns/Arduino/jerboa/jerboa.h"
+#include "/home/zns/Arduino/jerboa/generated-jesu-table.h"
 
 word phase;  // 0 to 0xFFFF; tone starts at 0, ends at 0xC000
 int n;
