@@ -1,11 +1,12 @@
-#include "/tmp/jerboa/jerboa.h"
-#include "/tmp/jerboa/generated-vco-table.h"
+#include "C:\Users\Zack\Downloads\nm2\jerboa\jerboa.h"
+#include  "C:\Users\Zack\Downloads\nm2\jerboa\generated-vco-table.h"
 
 word phase;
 
 void Setup() {}
 
 void Loop() {
+  unsigned long long int aa = 1;
   word offset = word(InA()) + word(InB()) + word(InK());
   phase += pgm_read_word(VCO_TABLE+offset);
   

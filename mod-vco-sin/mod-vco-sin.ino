@@ -1,6 +1,6 @@
-#include "/tmp/jerboa/jerboa.h"
-#include "/tmp/jerboa/generated-vco-table.h"
-#include "/tmp/jerboa/generated-sin-table.h"
+#include "C:\Users\Zack\Downloads\nm2\jerboa\jerboa.h"
+#include "C:\Users\Zack\Downloads\nm2\jerboa\generated-vco-table.h"
+#include "C:\Users\Zack\Downloads\nm2\jerboa\generated-sin-table.h"
 
 word phase;
 

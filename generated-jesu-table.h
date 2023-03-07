@@ -2,6 +2,11 @@
 #ifndef JESU_TABLE_H_
 #define JESU_TABLE_H_
 
+#define NUM_SAMPLES 3
+
+const int pos[] = {
+    0,120,240,1200 // start/end of each sample (last number is total size)
+};
 const byte JESU_TABLE[] PROGMEM = {
     81, // [   0 : 19]
     90, // [   1 : 21]
