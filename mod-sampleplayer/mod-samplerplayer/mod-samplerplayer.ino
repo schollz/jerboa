@@ -54,7 +54,7 @@ void Loop() {
 
   // update phase
   if (playing) {
-    wait++;
+    wait++;pl
     // if (wait % (2 * 19320/255) == 0 && volume < 255) volume++;
     if (wait % 3 == 0) {
       if (gated) p++;
