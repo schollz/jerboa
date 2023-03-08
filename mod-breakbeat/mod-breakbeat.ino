@@ -15,15 +15,17 @@ word phase_sample = 0;
 byte volume = 255;
 byte select_sample = 0;
 byte select_sample_start = 0;
-byte select_sample_end = NUM_SAMPLES-1;
+byte select_sample_end = NUM_SAMPLES - 2;
 byte stretch = 0;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
+
 void Setup() {
   RandomSetup();
 }
 
 void Loop() {
+  // stretch = linlin(InK(),0,255,0,5);
 
   int z = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample)) * volume;
   OutF(z >> 8);
@@ -42,20 +44,28 @@ void Loop() {
       byte random_jump = RandomByte();
       if (RandomByte() < 60) {
         direction = 0;
+        LedOn();
       } else {
         direction = 1;
+        LedOff();
       }
-      if (random_retrig < 30) {
+      if (random_retrig < 15) {
         retrig = 6;
-      } else if (random_retrig < 60) {
+        stretch=0;
+      } else if (random_retrig < 30) {
         retrig = 5;
-      } else if (random_retrig < 90) {
+        stretch=0;
+      } else if (random_retrig < 45) {
         retrig = 3;
-      } else if (random_retrig < 120) {
+        stretch=0;
+      } else if (random_retrig < 60) {
         retrig = 2;
+        stretch=0;
       } else {
         retrig = 4;
+        stretch=0;
       }
+
       if (direction == 1) select_sample++;
       if (direction == 0) {
         if (select_sample == 0) {
@@ -66,8 +76,10 @@ void Loop() {
       }
       if (select_sample < select_sample_start) select_sample = select_sample_end;
       if (select_sample > select_sample_end) select_sample = select_sample_start;
-      if (random_jump<60) {
-        select_sample = linlin(random_jump,0,60,0,NUM_SAMPLES);
+      if (random_jump < 15) {
+        stretch = linlin(RandomByte(),0,255,0,4);
+        retrig = linlin(RandomByte(),0,255,0,6);
+        select_sample = linlin(random_jump, 0, 60, 0, NUM_SAMPLES);
       }
       phase_sample = pos[select_sample];
     }
