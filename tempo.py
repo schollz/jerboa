@@ -23,7 +23,7 @@ for bpm_tar in range(50, 220, 10):
         bpm_mod.append(4)
 
     bpm_cur = bpm_set
-    for i in range(20):
+    for i in range(16):
         if np.abs(bpm_cur - bpm_tar) < 0.01:
             bpm_mod.append(0)
             continue
