@@ -10,6 +10,7 @@
 #include "/home/zns/Arduino/jerboa/generated-breakbeat-table.h"
 
 #define MULTY 64
+#define SHIFTY 6
 
 byte thresh_counter = 0;
 byte thresh_next = 3;
@@ -57,8 +58,10 @@ void Setup() {
 void Loop() {
   if (gate_on == false && phase_sample_last != phase_sample) {
     audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample))*MULTY;
+    // audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample)) << SHIFTY;
     if (thresh_next > thresh_counter) {
       audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1)))*MULTY;
+      // audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1))) << SHIFTY;
       audio_next = (audio_next - audio_last) / ((int)(thresh_next - thresh_counter));
     } else {
       audio_next = 0;
@@ -72,6 +75,10 @@ void Loop() {
   // linear interpolation, does this work?
   OutF((audio_last + audio_add)/MULTY);
   audio_add = audio_add + audio_next;
+
+  // linear interpolation with shifts, does this work?
+  // OutF((audio_last + audio_add) >> SHIFTY);
+  // audio_add = audio_add + audio_next;
 
   // linear interpolation through one sample filter?
 
