@@ -9,6 +9,7 @@
 #include "/home/zns/Arduino/jerboa/random.h"
 #include "/home/zns/Arduino/jerboa/generated-breakbeat-table.h"
 
+#define MULTY 64
 
 byte thresh_counter = 0;
 byte thresh_next = 3;
@@ -25,8 +26,8 @@ word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
 bool gate_on = false;
-byte audio_last = 0;
-char audio_next = -1;
+int audio_last = 0;
+int audio_next = -1;
 char audio_add = 0;
 byte stretch_amt = 0;
 byte stretch_max = 0;
@@ -55,20 +56,24 @@ void Setup() {
 
 void Loop() {
   if (gate_on == false && phase_sample_last != phase_sample) {
-    audio_last = (byte)pgm_read_byte(SAMPLE_TABLE + phase_sample);
-    // if (thresh_next > thresh_counter) {
-    //   audio_next = (char)pgm_read_byte(SAMPLE_TABLE + phase_sample +1);
-    //   audio_next = audio_next - ((char)audio_last);
-    //   audio_next = audio_next / 6;
-    // } else {
-    //   audio_next = 0;
-    // }
-    // audio_add = 0;
+    audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample))*MULTY;
+    if (thresh_next > thresh_counter) {
+      audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1)))*MULTY;
+      audio_next = (audio_next - audio_last) / ((int)(thresh_next - thresh_counter));
+    } else {
+      audio_next = 0;
+    }
+    audio_add = 0;
     phase_sample_last = phase_sample;
   }
-  OutF(audio_last);
-  // OutF(audio_last + audio_add);
-  // audio_add = audio_add + audio_next;
+  // no interpolation, does this work?
+  // OutF(audio_last/MULTY);
+
+  // linear interpolation, does this work?
+  OutF((audio_last + audio_add)/MULTY);
+  audio_add = audio_add + audio_next;
+
+  // linear interpolation through one sample filter?
 
   thresh_counter++;
   if (thresh_counter == thresh_next) {
