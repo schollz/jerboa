@@ -74,13 +74,13 @@ const byte SAMPLE_TABLE[] PROGMEM = {
 	ss = strings.Replace(ss, "UUU", fmt.Sprint(poses[1]), 1)
 	sliceSamples, _ = strconv.Atoi(poses[1])
 	retrigs := []int{
+		sliceSamples * 8,
 		sliceSamples * 4,
 		sliceSamples * 3,
 		sliceSamples * 2,
 		sliceSamples * 1,
 		sliceSamples / 2,
 		sliceSamples / 3,
-		sliceSamples / 4,
 	}
 	retrigStrings := make([]string, len(retrigs))
 	for i, v := range retrigs {

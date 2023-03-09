@@ -14,20 +14,24 @@ byte thresh_counter = 0;
 byte thresh_next = 3;
 byte thresh_nibble = 0;
 word phase_sample = 0;
-word phase_sample_last=11;
+word phase_sample_last = 11;
 byte select_sample = 0;
 byte select_sample_start = 0;
 byte select_sample_end = NUM_SAMPLES - 1;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
-byte tempo = 3;
+byte tempo = 9;
 word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
 bool gate_on = false;
 byte audio_last = 0;
-char audio_next = 0;
+char audio_next = -1;
 char audio_add = 0;
+byte stretch_amt = 0;
+byte stretch_max = 0;
+word stretch_time = 0;
+word stretch_add = 0;
 
 #define NUM_TEMPOS 12
 byte *tempo_steps[] = {
@@ -52,14 +56,19 @@ void Setup() {
 void Loop() {
   if (gate_on == false && phase_sample_last != phase_sample) {
     audio_last = (byte)pgm_read_byte(SAMPLE_TABLE + phase_sample);
-    audio_next = (byte)pgm_read_byte(SAMPLE_TABLE + phase_sample+(direction * 2 - 1));
-    audio_next = audio_next - audio_last;
-    audio_next = audio_next / (thresh_next-thresh_counter);
-    audio_add = 0;
+    // if (thresh_next > thresh_counter) {
+    //   audio_next = (char)pgm_read_byte(SAMPLE_TABLE + phase_sample +1);
+    //   audio_next = audio_next - ((char)audio_last);
+    //   audio_next = audio_next / 6;
+    // } else {
+    //   audio_next = 0;
+    // }
+    // audio_add = 0;
     phase_sample_last = phase_sample;
   }
-  OutF(audio_last/2);
-  audio_add = audio_add + audio_next;
+  OutF(audio_last);
+  // OutF(audio_last + audio_add);
+  // audio_add = audio_add + audio_next;
 
   thresh_counter++;
   if (thresh_counter == thresh_next) {
@@ -76,6 +85,15 @@ void Loop() {
       thresh_next = (byte)(thresh_next & 0xF0) >> 4;
     } else {
       thresh_next = (byte)(thresh_next & 0x0F);
+    }
+    // do stretching
+    if (stretch_time > 0) {
+      stretch_time--;
+      if (stretch_time % stretch_add==0) {
+        stretch_amt++;
+        if (stretch_amt > stretch_max) stretch_amt = stretch_max;
+      }
+      thresh_next = thresh_next + stretch_amt;
     }
 
 
@@ -106,24 +124,24 @@ void Loop() {
       byte r3 = RandomByte();
 
       // randomize direction
-      // if (r1 < 60) {
-      //   direction = 0;
-      // } else {
-      //   direction = 1;
-      // }
+      if (r1 < 60) {
+        direction = 0;
+      } else {
+        direction = 1;
+      }
 
       // random retrig
-      // if (r2 < 15) {
-      //   retrig = 6;
-      // } else if (r2 < 30) {
-      //   retrig = 5;
-      // } else if (r2 < 45) {
-      //   retrig = 3;
-      // } else if (r2 < 60) {
-      //   retrig = 2;
-      // } else {
-      //   retrig = 4;
-      // }
+      if (r2 < 15) {
+        retrig = 6;
+      } else if (r2 < 30) {
+        retrig = 5;
+      } else if (r2 < 45) {
+        retrig = 3;
+      } else if (r2 < 60) {
+        retrig = 2;
+      } else {
+        retrig = 4;
+      }
 
       // select new sample based on direction
       if (direction == 1) select_sample++;
@@ -141,11 +159,11 @@ void Loop() {
       if (select_sample > select_sample_end) select_sample = select_sample_start;
 
       // random jump
-      // if (r3 < 15) {
-      //   thresh_next = thresh_next + linlin(r1 - r3, 0, 255, 0, 4);
-      //   retrig = linlin(r1 - r2, 0, 255, 0, 6);
-      //   select_sample = linlin(r3, 0, 60, 0, NUM_SAMPLES);
-      // }
+      if (r3 < 15) {
+        thresh_next = thresh_next + linlin(r1 - r3, 0, 255, 0, 4);
+        retrig = linlin(r1 - r2, 0, 255, 0, 6);
+        select_sample = linlin(r3, 0, 60, 0, NUM_SAMPLES);
+      }
 
       // setup the gating
       gate_counter = 0;
@@ -154,10 +172,15 @@ void Loop() {
       }
 
 
-      // byte audio = InA();
-      // if (audio < 128) {
-      //   select_sample = linlin(audio, 0, 128, 0, NUM_SAMPLES);
-      // }
+      byte audio = InA();
+      if (audio < 128) {
+        // activate stretch
+        stretch_amt = 0;
+        stretch_time = retrigs[retrig]*2;
+        stretch_max = 10;
+        stretch_add = stretch_time / stretch_max;
+        //   select_sample = linlin(audio, 0, 128, 0, NUM_SAMPLES);
+      }
 
       // set new phase
       phase_sample = pos[select_sample];
