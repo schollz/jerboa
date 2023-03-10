@@ -11,7 +11,7 @@
 
 #define SHIFTY 6
 
-byte distortion = 0;
+byte distortion = 30;
 byte thresh_counter = 0;
 byte thresh_next = 3;
 byte thresh_nibble = 0;
@@ -22,7 +22,7 @@ byte select_sample_start = 0;
 byte select_sample_end = NUM_SAMPLES - 1;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
-byte tempo = 8;
+byte tempo = 5;
 word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
