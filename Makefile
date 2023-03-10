@@ -38,5 +38,5 @@ breakbeat6:
 	rm -rf output*wav
 	sox bpm200.wav -r 2415 -c 1 -b 8 0.wav norm lowpass 2415 trim 0 2.4 dither
 	ls -l 0.wav
-	sox 0.wav output.wav trim 0 0.4 : newfile : restart
+	sox 0.wav output.wav trim 0 0.6 : newfile : restart
 	go run make-breakbeat-table.go

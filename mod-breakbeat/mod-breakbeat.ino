@@ -11,7 +11,10 @@
 
 #define SHIFTY 6
 
-byte distortion = 30;
+byte noise_gate = 0;
+byte distortion = 0;
+byte volume_reduce = 2;  // volume 0 to 6
+byte volume_mod = 0;
 byte thresh_counter = 0;
 byte thresh_next = 3;
 byte thresh_nibble = 0;
@@ -22,7 +25,7 @@ byte select_sample_start = 0;
 byte select_sample_end = NUM_SAMPLES - 1;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
-byte tempo = 5;
+byte tempo = 7;
 word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
@@ -35,6 +38,7 @@ byte stretch_amt = 0;
 byte stretch_max = 0;
 word stretch_time = 0;
 word stretch_add = 0;
+byte r3;
 
 #define NUM_TEMPOS 12
 byte *tempo_steps[] = {
@@ -74,8 +78,24 @@ void Loop() {
 
   // linear interpolation with shifts
   audio_now = (audio_last + audio_add) >> SHIFTY;
-  if (distortion > 0) {
+  if (noise_gate > 0) {
+    if (audio_now > 128) {
+      if (audio_now > 128 + noise_gate) {
+        audio_now -= noise_gate;
+      } else {
+        audio_now = 128;
+      }
+    }
     if (audio_now < 128) {
+      if (audio_now < 128 - noise_gate) {
+        audio_now += noise_gate;
+      } else {
+        audio_now = 128;
+      }
+    }
+  }
+  if (distortion > 0) {
+    if (audio_now > 128) {
       if (audio_now < (255 - distortion)) {
         audio_now += distortion;
       } else {
@@ -90,6 +110,13 @@ void Loop() {
         // fold
         audio_now = distortion - audio_now;
       }
+    }
+  }
+  if ((volume_reduce + volume_mod) > 0) {
+    if (audio_now > 128) {
+      audio_now = ((audio_now - 128) >> (volume_reduce + volume_mod)) + 128;
+    } else if (audio_now < 128) {
+      audio_now = 128 - ((128 - audio_now) >> (volume_reduce + volume_mod));
     }
   }
   OutF(audio_now);
@@ -144,74 +171,82 @@ void Loop() {
     }
 
     if (phase_sample % retrigs[retrig] == 0) {
-      byte r1 = RandomByte();
-      byte r2 = RandomByte();
-      byte r3 = RandomByte();
-
-      // randomize direction
-      if (r1 < 60) {
-        direction = 0;
-      } else {
-        direction = 1;
-      }
-
-      // random retrig
-      if (r2 < 15) {
-        retrig = 6;
-      } else if (r2 < 30) {
-
-        retrig = 5;
-      } else if (r2 < 45) {
-        retrig = 3;
-      } else if (r2 < 60) {
-        retrig = 2;
-      } else {
-        retrig = 4;
-      }
-
-      // select new sample based on direction
-      if (direction == 1) select_sample++;
-      if (direction == 0) {
-        if (select_sample == 0) {
-          select_sample = select_sample_end;
-        } else {
-          select_sample--;
+      if (volume_mod > 0) {
+        if (volume_mod >3 || r3 < 90) {
+          volume_mod--;
         }
-      }
+      } else {
+        byte r1 = RandomByte();
+        byte r2 = RandomByte();
+
+        // randomize direction
+        if (r1 < 60) {
+          direction = 0;
+        } else {
+          direction = 1;
+        }
+
+        // random retrig
+        if (r2 < 15) {
+          retrig = 6;
+        } else if (r2 < 30) {
+
+          retrig = 5;
+        } else if (r2 < 45) {
+          retrig = 3;
+        } else if (r2 < 60) {
+          retrig = 2;
+        } else {
+          retrig = 4;
+        }
+
+        // select new sample based on direction
+        if (direction == 1) select_sample++;
+        if (direction == 0) {
+          if (select_sample == 0) {
+            select_sample = select_sample_end;
+          } else {
+            select_sample--;
+          }
+        }
 
 
-      // make sure the new sample is not out of bounds
-      if (select_sample < select_sample_start) select_sample = select_sample_end;
-      if (select_sample > select_sample_end) select_sample = select_sample_start;
+        // make sure the new sample is not out of bounds
+        if (select_sample < select_sample_start) select_sample = select_sample_end;
+        if (select_sample > select_sample_end) select_sample = select_sample_start;
 
-      // random jump
-      if (r3 < 15) {
-        thresh_next = thresh_next + linlin(r1 - r3, 0, 255, 0, 4);
-        retrig = linlin(r1 - r2, 0, 255, 0, 6);
-        select_sample = linlin(r3, 0, 60, 0, NUM_SAMPLES);
-      }
+        // random jump
+        if (r3 < 15) {
+          thresh_next = thresh_next + linlin(r1 - r3, 0, 255, 0, 4);
+          retrig = linlin(r1 - r2, 0, 255, 0, 6);
+          select_sample = linlin(r3, 0, 60, 0, NUM_SAMPLES);
+        }
 
-      // setup the gating
-      gate_counter = 0;
-      if (gate_thresh < 16) {
-        gate_thresh_set = (retrigs[retrig] * gate_thresh) / 16;
-      }
+        // setup the gating
+        gate_counter = 0;
+        if (gate_thresh < 16) {
+          gate_thresh_set = (retrigs[retrig] * gate_thresh) / 16;
+        }
 
 
-      byte audio = InA();
-      if (audio < 128) {
-        // activate stretch
-        stretch_amt = 0;
-        stretch_time = retrigs[retrig] * 2;
-        stretch_max = 10;
-        stretch_add = stretch_time / stretch_max;
-        //   select_sample = linlin(audio, 0, 128, 0, NUM_SAMPLES);
+        byte audio = InA();
+        if (audio < 128) {
+          // activate stretch
+          // stretch_amt = 0;
+          // stretch_time = retrigs[retrig] * 2;
+          // stretch_max = 10;
+          // stretch_add = stretch_time / stretch_max;
+          volume_mod = 5;
+          retrig = 6;
+          //   select_sample = linlin(audio, 0, 128, 0, NUM_SAMPLES);
+        }
       }
 
       // set new phase
       phase_sample = pos[select_sample];
     }
   } else {
+    r3 = RandomByte();
     LedOff();
   }
 }

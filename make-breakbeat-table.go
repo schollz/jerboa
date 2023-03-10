@@ -57,9 +57,9 @@ const byte SAMPLE_TABLE[] PROGMEM = {
 
 			for i, sample := range samples {
 				sampleString += fmt.Sprintf("%d", reader.IntValue(sample, 0))
+				n++
 				if i < len(samples)-1 {
 					sampleString += ",\n"
-					n++
 				}
 			}
 		}
