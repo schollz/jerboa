@@ -9,9 +9,9 @@
 #include "/home/zns/Arduino/jerboa/random.h"
 #include "/home/zns/Arduino/jerboa/generated-breakbeat-table.h"
 
-#define MULTY 64
 #define SHIFTY 6
 
+byte distortion = 0;
 byte thresh_counter = 0;
 byte thresh_next = 3;
 byte thresh_nibble = 0;
@@ -19,16 +19,17 @@ word phase_sample = 0;
 word phase_sample_last = 11;
 byte select_sample = 0;
 byte select_sample_start = 0;
-byte select_sample_end = 3;
+byte select_sample_end = NUM_SAMPLES - 1;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
-byte tempo = 7;
+byte tempo = 8;
 word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
 bool gate_on = false;
 int audio_last = 0;
 int audio_next = -1;
+byte audio_now = 0;
 char audio_add = 0;
 byte stretch_amt = 0;
 byte stretch_max = 0;
@@ -37,18 +38,19 @@ word stretch_add = 0;
 
 #define NUM_TEMPOS 12
 byte *tempo_steps[] = {
-  (byte[]){ 0x99, 0x99 },
-  (byte[]){ 0x88, 0x88 },
-  (byte[]){ 0x77, 0x77 },
-  (byte[]){ 0x66, 0x66 },
-  (byte[]){ 0x65, 0x65 },
-  (byte[]){ 0x55, 0x55 },
-  (byte[]){ 0x54, 0x54 },
-  (byte[]){ 0x44, 0x44 },
-  (byte[]){ 0x43, 0x43 },
-  (byte[]){ 0x33, 0x33 },  // base tempo
-  (byte[]){ 0x32, 0x32 },
-  (byte[]){ 0x22, 0x22 },
+  (byte[]){ 0x99, 0x99, 0x99 },
+  (byte[]){ 0x88, 0x88, 0x88 },
+  (byte[]){ 0x77, 0x77, 0x77 },
+  (byte[]){ 0x66, 0x66, 0x66 },
+  (byte[]){ 0x65, 0x65, 0x65 },
+  (byte[]){ 0x55, 0x55, 0x55 },
+  (byte[]){ 0x54, 0x54, 0x54 },
+  (byte[]){ 0x44, 0x44, 0x44 },
+  (byte[]){ 0x43, 0x44, 0x43 },
+  (byte[]){ 0x43, 0x43, 0x43 },
+  (byte[]){ 0x33, 0x33, 0x33 },  // base tempo
+  (byte[]){ 0x32, 0x32, 0x32 },
+  (byte[]){ 0x22, 0x22, 0x22 },
 };
 
 void Setup() {
@@ -70,22 +72,41 @@ void Loop() {
   // no interpolation
   // OutF(audio_last >> SHIFTY);
 
-  // linear interpolation with shifts,
-  OutF((audio_last + audio_add) >> SHIFTY);
+  // linear interpolation with shifts
+  audio_now = (audio_last + audio_add) >> SHIFTY;
+  if (distortion > 0) {
+    if (audio_now < 128) {
+      if (audio_now < (255 - distortion)) {
+        audio_now += distortion;
+      } else {
+        // fold
+        audio_now = 255 - distortion;
+      }
+    }
+    if (audio_now < 128) {
+      if (audio_now > distortion) {
+        audio_now -= distortion;
+      } else {
+        // fold
+        audio_now = distortion - audio_now;
+      }
+    }
+  }
+  OutF(audio_now);
   audio_add = audio_add + audio_next;
 
   thresh_counter++;
   if (thresh_counter == thresh_next) {
     thresh_counter = 0;
     thresh_nibble++;
-    if (thresh_nibble >= 4) {
+    if (thresh_nibble >= 6) {
       // update the tempo
       // TODO
       // tempo = linlin(InK(),0,255,0,12);
       thresh_nibble = 0;
     }
     thresh_next = tempo_steps[tempo][thresh_nibble / 2];
-    if (thresh_nibble == 0 || thresh_nibble == 2) {
+    if (thresh_nibble == 0 || thresh_nibble == 2 || thresh_nibble == 4) {
       thresh_next = (byte)(thresh_next & 0xF0) >> 4;
     } else {
       thresh_next = (byte)(thresh_next & 0x0F);
@@ -93,7 +114,7 @@ void Loop() {
     // do stretching
     if (stretch_time > 0) {
       stretch_time--;
-      if (stretch_time % stretch_add==0) {
+      if (stretch_time % stretch_add == 0) {
         stretch_amt++;
         if (stretch_amt > stretch_max) stretch_amt = stretch_max;
       }
@@ -138,7 +159,7 @@ void Loop() {
       if (r2 < 15) {
         retrig = 6;
       } else if (r2 < 30) {
-        
+
         retrig = 5;
       } else if (r2 < 45) {
         retrig = 3;
@@ -181,7 +202,7 @@ void Loop() {
       if (audio < 128) {
         // activate stretch
         stretch_amt = 0;
-        stretch_time = retrigs[retrig]*2;
+        stretch_time = retrigs[retrig] * 2;
         stretch_max = 10;
         stretch_add = stretch_time / stretch_max;
         //   select_sample = linlin(audio, 0, 128, 0, NUM_SAMPLES);
