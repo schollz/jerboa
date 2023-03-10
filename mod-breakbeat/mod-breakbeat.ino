@@ -19,10 +19,10 @@ word phase_sample = 0;
 word phase_sample_last = 11;
 byte select_sample = 0;
 byte select_sample_start = 0;
-byte select_sample_end = NUM_SAMPLES - 1;
+byte select_sample_end = 3;
 byte direction = 1;  // 0 = reverse, 1 = forward
 byte retrig = 4;
-byte tempo = 9;
+byte tempo = 7;
 word gate_counter = 0;
 word gate_thresh = 16;  // 1-16
 word gate_thresh_set = 65000;
@@ -57,11 +57,9 @@ void Setup() {
 
 void Loop() {
   if (gate_on == false && phase_sample_last != phase_sample) {
-    audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample))*MULTY;
-    // audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample)) << SHIFTY;
+    audio_last = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample)) << SHIFTY;
     if (thresh_next > thresh_counter) {
-      audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1)))*MULTY;
-      // audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1))) << SHIFTY;
+      audio_next = ((int)pgm_read_byte(SAMPLE_TABLE + phase_sample + (direction * 2 - 1))) << SHIFTY;
       audio_next = (audio_next - audio_last) / ((int)(thresh_next - thresh_counter));
     } else {
       audio_next = 0;
@@ -69,18 +67,12 @@ void Loop() {
     audio_add = 0;
     phase_sample_last = phase_sample;
   }
-  // no interpolation, does this work?
-  // OutF(audio_last/MULTY);
+  // no interpolation
+  // OutF(audio_last >> SHIFTY);
 
-  // linear interpolation, does this work?
-  OutF((audio_last + audio_add)/MULTY);
+  // linear interpolation with shifts,
+  OutF((audio_last + audio_add) >> SHIFTY);
   audio_add = audio_add + audio_next;
-
-  // linear interpolation with shifts, does this work?
-  // OutF((audio_last + audio_add) >> SHIFTY);
-  // audio_add = audio_add + audio_next;
-
-  // linear interpolation through one sample filter?
 
   thresh_counter++;
   if (thresh_counter == thresh_next) {
