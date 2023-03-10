@@ -134,6 +134,7 @@ void Loop() {
       if (r2 < 15) {
         retrig = 6;
       } else if (r2 < 30) {
+        
         retrig = 5;
       } else if (r2 < 45) {
         retrig = 3;
